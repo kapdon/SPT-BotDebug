@@ -1,1 +1,2 @@
-# BackdoorBandit
+# BotDebug 
+For use with BigBrain
