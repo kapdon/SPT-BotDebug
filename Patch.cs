@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using Aki.Reflection.Patching;
+﻿using System.Collections.Generic;
 using BepInEx.Logging;
 using Comfort.Common;
-using BotDebug;
 using EFT;
-using EFT.Ballistics;
-using EFT.Interactive;
-using EFT.InventoryLogic;
-using HarmonyLib;
-using HarmonyLib.Tools;
 using UnityEngine;
 
 namespace BotDebug
@@ -20,6 +10,7 @@ namespace BotDebug
     {
         private static GameWorld gameWorld;
         private static Dictionary<Player, string> botNumbers = new Dictionary<Player, string>();
+        private static Dictionary<Player, string> baseBrain = new Dictionary<Player, string>();
         private static Dictionary<Player, string> currentBrainLayers = new Dictionary<Player, string>();
         private static Vector3 offset = new Vector3(0, 2.5f, 0);
         private static Color textColor = Color.red;
@@ -38,16 +29,19 @@ namespace BotDebug
 
         public void Update()
         {
-            // Update the bot information based on gameWorld.RegisteredPlayers or any other source of bot data
-            foreach (Player player in gameWorld.RegisteredPlayers)
+            if (BotDebug.BotDebugPlugin.EnableGui.Value)
             {
-                if (!player.IsYourPlayer)
+                // Update the bot information based on gameWorld.RegisteredPlayers or any other source of bot data
+                foreach (Player player in gameWorld.RegisteredPlayers)
                 {
-                    botNumbers[player] = GetBotNumber(player);
-                    currentBrainLayers[player] = player.AIData.BotOwner.Brain.GetStateName;
+                    if (!player.IsYourPlayer)
+                    {
+                        botNumbers[player] = GetBotNumber(player);
+                        baseBrain[player] = player.AIData.BotOwner.Brain.BaseBrain.ShortName();
+                        currentBrainLayers[player] = player.AIData.BotOwner.Brain.GetStateName;
+                    }
                 }
             }
-
         }
 
         public static void Enable()
@@ -63,29 +57,41 @@ namespace BotDebug
 
         private void OnGUI()
         {
-            GUIStyle textStyle = new GUIStyle(GUI.skin.box);
-            textStyle.normal.textColor = textColor;
-
-            foreach (var kvp in botNumbers)
+            if (BotDebug.BotDebugPlugin.EnableGui.Value)
             {
-                Player player = kvp.Key;
+                GUIStyle textStyle = new GUIStyle(GUI.skin.box);
+                textStyle.normal.textColor = textColor;
 
-                //draw only if the bot is still alive
-                if (!player.AIData.BotOwner.IsDead)
+                foreach (var bot in botNumbers)
                 {
-                    string botNumber = kvp.Value;
-                    string currentBrainLayer = currentBrainLayers[player];
+                    Player player = bot.Key;
 
-                    Vector3 position = player.gameObject.transform.position + Vector3.up * 2.5f;
-                    Vector3 screenPos = Camera.main.WorldToScreenPoint(position);
+                    //draw only if the bot is still alive
+                    if (!player.AIData.BotOwner.IsDead && 
+                        player.isActiveAndEnabled &&
+                        player.CameraPosition != null)
+                    {
+                        string botNumber = bot.Value;
+                        string currentBrainLayer = currentBrainLayers[player];
+                        string brain = baseBrain[player];
 
-                    GUI.Box(new Rect(screenPos.x - 50, Screen.height - screenPos.y, 100, BotDebug.BotDebugPlugin.debugBoxHeight.Value),
-                        $"Bot: {botNumber}\n" +
-                        $"Layer: {currentBrainLayer}\n");
+                        Vector3 position = player.gameObject.transform.position + Vector3.up * 2.5f;
+                        Vector3 screenPos = Camera.main.WorldToScreenPoint(position);
+
+                        // Check if the player's position is within the screen boundaries
+                        if (screenPos.x >= 0 && screenPos.x <= Screen.width && screenPos.y >= 0 && screenPos.y <= Screen.height)
+                        {
+                            GUI.Box(new Rect(screenPos.x - 50, Screen.height - screenPos.y, BotDebug.BotDebugPlugin.debugBoxWidth.Value, BotDebug.BotDebugPlugin.debugBoxHeight.Value),
+                            $"Bot: {botNumber}\n" +
+                            $"Base Brain: {brain}\n" +
+                            $"Layer: {currentBrainLayer}\n");
+                        }
+                    }
+
+
                 }
-                
-
             }
+            
         }
 
         private static string GetBotNumber(Player player)

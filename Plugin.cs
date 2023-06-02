@@ -5,7 +5,6 @@ using Aki.Reflection.Patching;
 using BepInEx;
 using BepInEx.Configuration;
 using EFT;
-using UnityEngine;
 using VersionChecker;
 
 namespace BotDebug
@@ -15,6 +14,7 @@ namespace BotDebug
     {
         public static ConfigEntry<bool> EnableGui;
         public static ConfigEntry<int> debugBoxHeight;
+        public static ConfigEntry<int> debugBoxWidth;
         private void Awake()
         {
             CheckEftVersion();
@@ -28,7 +28,13 @@ namespace BotDebug
             debugBoxHeight = Config.Bind(
                 "Main Settings",
                 "Debug Box Height",
-                40,
+                60,
+                "Change to Increase/Decrease GUI Box Size");
+
+            debugBoxWidth = Config.Bind(
+                "Main Settings",
+                "Debug Box Width",
+                180,
                 "Change to Increase/Decrease GUI Box Size");
 
             new NewGamePatch().Enable();
