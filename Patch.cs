@@ -65,36 +65,41 @@ namespace BotDebug
         {
             if (BotDebug.BotDebugPlugin.EnableGui.Value)
             {
-                GUIStyle textStyle = new GUIStyle(GUI.skin.box);
-                textStyle.normal.textColor = textColor;
-
-                foreach (var bot in botNumbers)
+                try
                 {
-                    Player player = bot.Key;
+                    GUIStyle textStyle = new GUIStyle(GUI.skin.box);
+                    textStyle.normal.textColor = textColor;
 
-                    //draw only if the bot is still alive
-                    if (!player.AIData.BotOwner.IsDead && 
-                        player.isActiveAndEnabled &&
-                        player.IsVisible)
+                    foreach (var bot in botNumbers)
                     {
-                        string botNumber = bot.Value;
-                        //string currentBrainLayer = currentBrainLayers[player];
-                        string brain = baseBrain[player];
+                        Player player = bot.Key;
 
-                        Vector3 position = player.gameObject.transform.position + Vector3.up * 2.5f;
-                        Vector3 screenPos = Camera.main.WorldToScreenPoint(position);
+                        //draw only if the bot is still alive
+                        if (!player.AIData.BotOwner.IsDead &&
+                            player.isActiveAndEnabled &&
+                            player.IsVisible)
+                        {
+                            string botNumber = bot.Value;
+                            //string currentBrainLayer = currentBrainLayers[player];
+                            string brain = baseBrain[player];
+
+                            Vector3 position = player.gameObject.transform.position + Vector3.up * 2.5f;
+                            Vector3 screenPos = Camera.main.WorldToScreenPoint(position);
 
 
-                        GUI.Box(new Rect(screenPos.x - 50, Screen.height - screenPos.y, BotDebug.BotDebugPlugin.debugBoxWidth.Value, BotDebug.BotDebugPlugin.debugBoxHeight.Value),
-                        $"Bot: {botNumber}\n" +
-                        $"Base Brain: {brain}\n");
+                            GUI.Box(new Rect(screenPos.x - 50, Screen.height - screenPos.y, BotDebug.BotDebugPlugin.debugBoxWidth.Value, BotDebug.BotDebugPlugin.debugBoxHeight.Value),
+                            $"Bot: {botNumber}\n" +
+                            $"Base Brain: {brain}\n");
 
-                        //$"Layer: {currentBrainLayer}\n");
-                        
+                            //$"Layer: {currentBrainLayer}\n");
+
+                        }
+
+
                     }
-
-
                 }
+                catch { }
+                
             }
             
         }
