@@ -1,13 +1,13 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
-using VersionChecker;
+using DrakiaXYZ.BotDebug.VersionChecker;
 
-[assembly: AssemblyTitle("dvize.botDebug")]
+[assembly: AssemblyTitle("DrakiaXYZ-BotDebug")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("dvize.botDebug")]
-[assembly: AssemblyCopyright("Copyright ©  2023")]
+[assembly: AssemblyProduct("DrakiaXYZ-BotDebug")]
+[assembly: AssemblyCopyright("Copyright ©  2023 DrakiaXYZ")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -18,6 +18,6 @@ using VersionChecker;
 [assembly: Guid("8fdfc616-1704-4056-a87e-2783692cc153")]
 
 
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("0.0.1.0")]
+[assembly: AssemblyFileVersion("0.0.1.0")]
 [assembly: TarkovVersion(23399)]

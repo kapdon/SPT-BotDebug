@@ -1,13 +1,13 @@
-﻿using System;
+﻿using BepInEx;
+using BepInEx.Configuration;
+using BepInEx.Logging;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using BepInEx;
-using BepInEx.Configuration;
-using BepInEx.Logging;
 using UnityEngine;
 
-namespace VersionChecker
+namespace DrakiaXYZ.BotDebug.VersionChecker
 {
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = false)]
     public class TarkovVersion : Attribute
@@ -63,6 +63,7 @@ namespace VersionChecker
                         }
                     ));
                 }
+
                 return false;
             }
 
