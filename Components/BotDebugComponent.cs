@@ -1,48 +1,63 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 using BepInEx.Logging;
 using Comfort.Common;
+using DrakiaXYZ.BotDebug.Helpers;
 using EFT;
+using HarmonyLib;
 using UnityEngine;
 using BotDebugStruct = GStruct15;
 
 namespace DrakiaXYZ.BotDebug.Components
 {
-    internal class BotDebugComponent : MonoBehaviour
+    internal class BotDebugComponent : MonoBehaviour, IDisposable
     {
-        private static GameWorld gameWorld;
-        private static BotSpawnerClass botSpawner;
-        private static Player localPlayer;
+        private GameWorld gameWorld;
+        private BotSpawnerClass botSpawner;
+        private Player localPlayer;
 
         private GUIStyle guiStyle;
 
         private Dictionary<string, BotData> botMap = new Dictionary<string, BotData>();
+        protected ManualLogSource Logger;
 
-        protected static ManualLogSource Logger
-        {
-            get; private set;
-        }
+        // Hijack BotInfoDataPanel to create our data
+        BotInfoDataPanel botInfoDataPanel = new BotInfoDataPanel();
+        FieldInfo botInfoStringBuilderField;
 
         private BotDebugComponent()
         {
-            if (Logger == null)
-            {
-                Logger = BepInEx.Logging.Logger.CreateLogSource(nameof(BotDebugComponent));
-            }
+            Logger = BepInEx.Logging.Logger.CreateLogSource(GetType().Name);
+            botInfoStringBuilderField = AccessTools.Field(typeof(BotInfoDataPanel), "stringBuilder_0");
+        }
+
+        public void Awake()
+        {
+            botSpawner = (Singleton<IBotGame>.Instance).BotsController.BotSpawner;
+            gameWorld = Singleton<GameWorld>.Instance;
+            localPlayer = gameWorld.MainPlayer;
+
+            Logger.LogDebug("BotDebugComponent enabled");
+        }
+        
+        public void Dispose()
+        {
+            Destroy(this);
+            Logger.LogDebug("BotDebugComponent disabled");
         }
 
         public void Update()
         {
-            if (!BotDebugPlugin.Enable.Value || gameWorld == null)
+            // Make sure we're enabled
+            if (!Settings.Enable.Value || gameWorld == null)
             {
                 return;
             }
 
-            if (localPlayer == null)
-            {
-                localPlayer = GetPlayer();
-            }
-
+            // Add any missing bots to the dictionary, pulling the debug data from BSG classes
             foreach (Player player in gameWorld.AllPlayers)
             {
                 var data = botSpawner.BotDebugData(localPlayer, player.ProfileId);
@@ -55,46 +70,21 @@ namespace DrakiaXYZ.BotDebug.Components
 
                 botData.SetData(data);
             }
-        }
 
-        private Player GetPlayer()
-        {
-            foreach (var player in gameWorld.RegisteredPlayers)
+            // Check if the user is hitting the Next Mode button
+            if (Settings.NextModeKey.Value.IsDown())
             {
-                // See if this is a ClientPlayer object
-                var clientPlayer = player as ClientPlayer;
-                if (clientPlayer != null)
-                {
-                    return clientPlayer;
-                }
-
-                // See if this is a LocalPlayer object, and isn't AI
-                LocalPlayer localPlayer = player as LocalPlayer;
-                if (localPlayer != null && !localPlayer.AIData.IsAI)
-                {
-                    return localPlayer;
-                }
+                Settings.ActiveMode.Value = Settings.ActiveMode.Value.Next();
             }
-
-            return null;
-        }
-
-        public static void Enable()
-        {
-            if (Singleton<IBotGame>.Instantiated)
+            else if (Settings.PrevModeKey.Value.IsDown())
             {
-                botSpawner = (Singleton<IBotGame>.Instance).BotsController.BotSpawner;
-                gameWorld = Singleton<GameWorld>.Instance;
-
-                gameWorld.GetOrAddComponent<BotDebugComponent>();
-
-                Logger.LogDebug("BotDebugComponent enabled");
+                Settings.ActiveMode.Value = Settings.ActiveMode.Value.Previous();
             }
         }
 
         private void OnGUI()
         {
-            if (BotDebugPlugin.Enable.Value)
+            if (Settings.Enable.Value)
             {
                 if (guiStyle == null)
                 {
@@ -102,6 +92,7 @@ namespace DrakiaXYZ.BotDebug.Components
                     guiStyle.alignment = TextAnchor.MiddleRight;
                     guiStyle.fontSize = 24;
                     guiStyle.margin = new RectOffset(3, 3, 3, 3);
+                    guiStyle.richText = true;
                 }
 
                 List<string> deadList = new List<string>();
@@ -119,31 +110,47 @@ namespace DrakiaXYZ.BotDebug.Components
                         continue;
                     }
 
+                    // Make sure we have a GuiContent object for this bot
+                    if (bot.Value.GuiContent == null)
+                    {
+                        bot.Value.GuiContent = new GUIContent();
+                    }
+
                     // Only draw the bot data if it's visible on screen
                     if (WorldToScreenPoint(botData.PlayerOwner.Transform.position, Camera.main, out Vector3 screenPos))
                     {
                         int dist = Mathf.RoundToInt((botData.PlayerOwner.Transform.position - localPlayer.Transform.position).magnitude);
-                        string guiText = $"Bot: {botData.Name}\n";
-                        guiText += $"Brain: {botData.StrategyName}\n";
-                        guiText += $"Layer: {botData.LayerName}\n";
-                        guiText += $"Action: {botData.NodeName} ({botData.Reason})\n";
-                        guiText += $"Distance: {dist}";
 
-                        if (bot.Value.GuiContent == null)
-                        { 
-                            bot.Value.GuiContent = new GUIContent();
+                        // Directly utilize the StringBuilder, so we can add data to it without allocating our own memory
+                        if (botInfoDataPanel.GetInfoText(botData, Settings.ActiveMode.Value, true) != null)
+                        {
+                            StringBuilder botInfoStringBuilder = botInfoStringBuilderField.GetValue(botInfoDataPanel) as StringBuilder;
+
+                            // Add distance to the Behaviour state
+                            if (Settings.ActiveMode.Value == EBotInfoMode.Behaviour)
+                            {
+                                botInfoStringBuilder.AppendLabeledValue("Dist", dist.ToString(), Color.white, Color.white, true);
+                            }
+                            // Otherwise, add the ID/Strategy to any other layer
+                            else
+                            {
+                                botInfoStringBuilder.AppendLabeledValue("Id, Strategy", $"{botData.Id} {botData.StrategyName}", Color.white, Color.white, true);
+                            }
+
+                            bot.Value.GuiContent.text = botInfoStringBuilder.ToString();
+                            Vector2 guiSize = guiStyle.CalcSize(bot.Value.GuiContent);
+
+                            Rect guiRect = new Rect(
+                                screenPos.x - (guiSize.x / 2),
+                                Screen.height - screenPos.y - guiSize.y,
+                                guiSize.x,
+                                guiSize.y);
+                            GUI.Box(guiRect, bot.Value.GuiContent, guiStyle);
                         }
-
-                        bot.Value.GuiContent.text = guiText;
-                        Vector2 guiSize = guiStyle.CalcSize(bot.Value.GuiContent);
-                        //Vector3 screenPos = Camera.main.WorldToScreenPoint(position);
-
-                        Rect guiRect = new Rect(
-                            screenPos.x - (guiSize.x / 2),
-                            Screen.height - screenPos.y - guiSize.y,
-                            guiSize.x,
-                            guiSize.y);
-                        GUI.Box(guiRect, bot.Value.GuiContent, guiStyle);
+                        else
+                        {
+                            bot.Value.GuiContent.text = "";
+                        }
                     }
                 }
 
@@ -183,10 +190,22 @@ namespace DrakiaXYZ.BotDebug.Components
             }
         }
 
-        private static string GetBotNumber(Player player)
+        public static void Enable()
         {
-            // its the players gameobject name
-            return player.AIData.BotOwner.gameObject.name;
+            if (Singleton<IBotGame>.Instantiated)
+            {
+                var gameWorld = Singleton<GameWorld>.Instance;
+                gameWorld.GetOrAddComponent<BotDebugComponent>();
+            }
+        }
+
+        public static void Disable()
+        {
+            if (Singleton<IBotGame>.Instantiated)
+            {
+                var gameWorld = Singleton<GameWorld>.Instance;
+                gameWorld.GetComponent<BotDebugComponent>()?.Dispose();
+            }
         }
 
         internal class BotData

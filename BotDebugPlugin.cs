@@ -4,15 +4,16 @@ using Aki.Reflection.Patching;
 using BepInEx;
 using BepInEx.Configuration;
 using DrakiaXYZ.BotDebug.Components;
+using DrakiaXYZ.BotDebug.Helpers;
 using DrakiaXYZ.BotDebug.VersionChecker;
 using EFT;
+using UnityEngine;
 
 namespace DrakiaXYZ.BotDebug
 {
     [BepInPlugin("xyz.drakia.botdebug", "DrakiaXYZ-BotDebug", "0.0.1")]
     public class BotDebugPlugin : BaseUnityPlugin
     {
-        public static ConfigEntry<bool> Enable;
         private void Awake()
         {
             if (!TarkovVersion.CheckEftVersion(Logger, Info, Config))
@@ -20,11 +21,7 @@ namespace DrakiaXYZ.BotDebug
                 throw new Exception($"Invalid EFT Version");
             }
 
-            Enable = Config.Bind(
-                "Main Settings",
-                "Enable",
-                false,
-                "Turn Off/On");
+            Settings.Init(Config);
 
             new NewGamePatch().Enable();
         }
