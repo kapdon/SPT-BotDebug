@@ -2,16 +2,16 @@
 using System.Reflection;
 using Aki.Reflection.Patching;
 using BepInEx;
-using BepInEx.Configuration;
 using DrakiaXYZ.BotDebug.Components;
 using DrakiaXYZ.BotDebug.Helpers;
 using DrakiaXYZ.BotDebug.VersionChecker;
 using EFT;
+using HarmonyLib;
 using UnityEngine;
 
 namespace DrakiaXYZ.BotDebug
 {
-    [BepInPlugin("xyz.drakia.botdebug", "DrakiaXYZ-BotDebug", "0.0.1")]
+    [BepInPlugin("xyz.drakia.botdebug", "DrakiaXYZ-BotDebug", "1.0.0")]
     public class BotDebugPlugin : BaseUnityPlugin
     {
         private void Awake()

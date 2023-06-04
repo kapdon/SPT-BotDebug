@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Text;
 using BepInEx.Logging;
 using Comfort.Common;
 using DrakiaXYZ.BotDebug.Helpers;
 using EFT;
-using HarmonyLib;
 using UnityEngine;
 using BotDebugStruct = GStruct15;
 
@@ -20,18 +17,22 @@ namespace DrakiaXYZ.BotDebug.Components
         private Player localPlayer;
 
         private GUIStyle guiStyle;
+        private float lastBotUpdate;
+        private bool updateGuiPending = false;
 
         private Dictionary<string, BotData> botMap = new Dictionary<string, BotData>();
+        private List<string> deadList = new List<string>();
         protected ManualLogSource Logger;
 
-        // Hijack BotInfoDataPanel to create our data
-        BotInfoDataPanel botInfoDataPanel = new BotInfoDataPanel();
-        FieldInfo botInfoStringBuilderField;
+        long memAllocUpdate = 0;
+        long memAllocGui = 0;
+        float lastMemOutUpdate = 0;
+        float lastMemOutGui = 0;
+        float memTimeframe = 5.0f;
 
         private BotDebugComponent()
         {
             Logger = BepInEx.Logging.Logger.CreateLogSource(GetType().Name);
-            botInfoStringBuilderField = AccessTools.Field(typeof(BotInfoDataPanel), "stringBuilder_0");
         }
 
         public void Awake()
@@ -40,13 +41,13 @@ namespace DrakiaXYZ.BotDebug.Components
             gameWorld = Singleton<GameWorld>.Instance;
             localPlayer = gameWorld.MainPlayer;
 
-            Logger.LogDebug("BotDebugComponent enabled");
+            Logger.LogInfo("BotDebugComponent enabled");
         }
         
         public void Dispose()
         {
+            Logger.LogInfo("BotDebugComponent disabled");
             Destroy(this);
-            Logger.LogDebug("BotDebugComponent disabled");
         }
 
         public void Update()
@@ -57,13 +58,35 @@ namespace DrakiaXYZ.BotDebug.Components
                 return;
             }
 
+            // Check if the user is hitting the Next Mode button
+            if (Settings.NextModeKey.Value.IsDown())
+            {
+                Settings.ActiveMode.Value = Settings.ActiveMode.Value.Next();
+                updateGuiPending = true;
+            }
+            else if (Settings.PrevModeKey.Value.IsDown())
+            {
+                Settings.ActiveMode.Value = Settings.ActiveMode.Value.Previous();
+                updateGuiPending = true;
+            }
+
+            // Only update bot data once every second
+            if (Time.time - lastBotUpdate < 1.0f)
+            {
+                return;
+            }
+            lastBotUpdate = Time.time;
+
+#if DEBUG
+            long startMem = GC.GetTotalMemory(false);
+#endif
+
             // Add any missing bots to the dictionary, pulling the debug data from BSG classes
             foreach (Player player in gameWorld.AllPlayers)
             {
                 var data = botSpawner.BotDebugData(localPlayer, player.ProfileId);
                 if (!botMap.TryGetValue(player.ProfileId, out var botData))
                 {
-                    Logger.LogInfo($"Adding bot {player.name}");
                     botData = new BotData();
                     botMap.Add(player.ProfileId, botData);
                 }
@@ -71,95 +94,108 @@ namespace DrakiaXYZ.BotDebug.Components
                 botData.SetData(data);
             }
 
-            // Check if the user is hitting the Next Mode button
-            if (Settings.NextModeKey.Value.IsDown())
+            // Flag that the GUI needs to update its text
+            updateGuiPending = true;
+
+#if DEBUG
+            memAllocUpdate += GC.GetTotalMemory(false) - startMem;
+            if (Time.time - lastMemOutUpdate > memTimeframe)
             {
-                Settings.ActiveMode.Value = Settings.ActiveMode.Value.Next();
+                Logger.LogDebug($"Update Memory Allocated ({memTimeframe}s): {Math.Floor(memAllocUpdate / 1024f)} KiB");
+                memAllocUpdate = 0;
+                lastMemOutUpdate = Time.time;
             }
-            else if (Settings.PrevModeKey.Value.IsDown())
-            {
-                Settings.ActiveMode.Value = Settings.ActiveMode.Value.Previous();
-            }
+#endif
         }
 
         private void OnGUI()
         {
-            if (Settings.Enable.Value)
+            if (!Settings.Enable.Value)
             {
-                if (guiStyle == null)
+                return;
+            }
+
+#if DEBUG
+            long startMem = GC.GetTotalMemory(false);
+#endif
+
+            if (guiStyle == null)
+            {
+                guiStyle = new GUIStyle(GUI.skin.box);
+                guiStyle.alignment = TextAnchor.MiddleLeft;
+                guiStyle.fontSize = 24;
+                guiStyle.margin = new RectOffset(3, 3, 3, 3);
+                guiStyle.richText = true;
+            }
+
+            foreach (var bot in botMap)
+            {
+                var botData = bot.Value.Data;
+                if (!botData.InitedBotData) continue;
+
+                // If the bot hasn't been updated in over 3 seconds, it's dead Jim, remove it
+                if (Time.time - bot.Value.LastUpdate >= 3f)
                 {
-                    guiStyle = new GUIStyle(GUI.skin.box);
-                    guiStyle.alignment = TextAnchor.MiddleRight;
-                    guiStyle.fontSize = 24;
-                    guiStyle.margin = new RectOffset(3, 3, 3, 3);
-                    guiStyle.richText = true;
+                    deadList.Add(bot.Key);
+                    continue;
                 }
 
-                List<string> deadList = new List<string>();
-
-                foreach (var bot in botMap)
+                // Make sure we have a GuiContent and GuiRect object for this bot
+                if (bot.Value.GuiContent == null)
                 {
-                    var botData = bot.Value.Data;
-                    if (!botData.InitedBotData) continue;
+                    bot.Value.GuiContent = new GUIContent();
+                }
+                if (bot.Value.GuiRect == null)
+                {
+                    bot.Value.GuiRect = new Rect();
+                }
 
-                    // If the bot hasn't been updated in over 3 seconds, it's dead Jim, remove it
-                    if (Time.time - bot.Value.LastUpdate >= 3f)
+                // Only draw the bot data if it's visible on screen
+                Vector3 aboveBotHeadPos = botData.PlayerOwner.Transform.position + (Vector3.up * 1.5f);
+                if (WorldToScreenPoint(aboveBotHeadPos, Camera.main, out Vector3 screenPos))
+                {
+                    if (updateGuiPending)
                     {
-                        Logger.LogInfo($"Removing {botData.Name}  {Time.time} - {bot.Value.LastUpdate}");
-                        deadList.Add(bot.Key);
-                        continue;
-                    }
-
-                    // Make sure we have a GuiContent object for this bot
-                    if (bot.Value.GuiContent == null)
-                    {
-                        bot.Value.GuiContent = new GUIContent();
-                    }
-
-                    // Only draw the bot data if it's visible on screen
-                    if (WorldToScreenPoint(botData.PlayerOwner.Transform.position, Camera.main, out Vector3 screenPos))
-                    {
-                        int dist = Mathf.RoundToInt((botData.PlayerOwner.Transform.position - localPlayer.Transform.position).magnitude);
-
-                        // Directly utilize the StringBuilder, so we can add data to it without allocating our own memory
-                        if (botInfoDataPanel.GetInfoText(botData, Settings.ActiveMode.Value, true) != null)
+                        StringBuilder botInfoStringBuilder = BotInfo.GetInfoText(botData, localPlayer, Settings.ActiveMode.Value);
+                        if (botInfoStringBuilder != null)
                         {
-                            StringBuilder botInfoStringBuilder = botInfoStringBuilderField.GetValue(botInfoDataPanel) as StringBuilder;
-
-                            // Add distance to the Behaviour state
-                            if (Settings.ActiveMode.Value == EBotInfoMode.Behaviour)
-                            {
-                                botInfoStringBuilder.AppendLabeledValue("Dist", dist.ToString(), Color.white, Color.white, true);
-                            }
-                            // Otherwise, add the ID/Strategy to any other layer
-                            else
-                            {
-                                botInfoStringBuilder.AppendLabeledValue("Id, Strategy", $"{botData.Id} {botData.StrategyName}", Color.white, Color.white, true);
-                            }
-
                             bot.Value.GuiContent.text = botInfoStringBuilder.ToString();
-                            Vector2 guiSize = guiStyle.CalcSize(bot.Value.GuiContent);
-
-                            Rect guiRect = new Rect(
-                                screenPos.x - (guiSize.x / 2),
-                                Screen.height - screenPos.y - guiSize.y,
-                                guiSize.x,
-                                guiSize.y);
-                            GUI.Box(guiRect, bot.Value.GuiContent, guiStyle);
                         }
                         else
                         {
                             bot.Value.GuiContent.text = "";
                         }
                     }
-                }
 
-                // Remove any dead bots, just to save processing later
-                foreach (string deadBotKey in deadList)
-                {
-                    botMap.Remove(deadBotKey);
+                    if (bot.Value.GuiContent.text.Length > 0)
+                    {
+                        Vector2 guiSize = guiStyle.CalcSize(bot.Value.GuiContent);
+                        bot.Value.GuiRect.x = screenPos.x - (guiSize.x / 2);
+                        bot.Value.GuiRect.y = Screen.height - screenPos.y - guiSize.y;
+                        bot.Value.GuiRect.size = guiSize;
+
+                        GUI.Box(bot.Value.GuiRect, bot.Value.GuiContent, guiStyle);
+                    }
                 }
             }
+            updateGuiPending = false;
+
+            // Remove any dead bots, just to save processing later
+            foreach (string deadBotKey in deadList)
+            {
+                botMap.Remove(deadBotKey);
+            }
+            deadList.Clear();
+
+#if DEBUG
+            memAllocGui += GC.GetTotalMemory(false) - startMem;
+            if (Time.time - lastMemOutGui > memTimeframe)
+            {
+                Logger.LogDebug($"GUI Memory Allocated ({memTimeframe}s): {Math.Floor(memAllocGui / 1024f)} KiB");
+                memAllocGui = 0;
+                lastMemOutGui = Time.time;
+            }
+#endif
         }
 
         bool WorldToScreenPoint(Vector3 worldPoint, Camera camera, out Vector3 screenPoint)
@@ -219,6 +255,7 @@ namespace DrakiaXYZ.BotDebug.Components
             public float LastUpdate;
             public BotDebugStruct Data;
             public GUIContent GuiContent;
+            public Rect GuiRect;
         }
     }
 

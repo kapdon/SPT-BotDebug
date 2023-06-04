@@ -113,6 +113,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BotDebugPlugin.cs" />
+    <Compile Include="BotInfo.cs" />
     <Compile Include="Components\BotDebugComponent.cs" />
     <Compile Include="Helpers\EnumExtension.cs" />
     <Compile Include="Helpers\Settings.cs" />
