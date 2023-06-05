@@ -12,6 +12,7 @@ namespace DrakiaXYZ.BotDebug.Helpers
         public static ConfigEntry<EBotInfoMode> ActiveMode;
         public static ConfigEntry<KeyboardShortcut> NextModeKey;
         public static ConfigEntry<KeyboardShortcut> PrevModeKey;
+        public static ConfigEntry<int> MaxDrawDistance;
 
         public static void Init(ConfigFile Config)
         {
@@ -39,6 +40,12 @@ namespace DrakiaXYZ.BotDebug.Helpers
                 "PrevModeKey",
                 new KeyboardShortcut(KeyCode.F9),
                 "Key to switch to the previous Monitor Mode");
+
+            MaxDrawDistance = Config.Bind(
+                "Main Settings",
+                "MaxDrawDistance",
+                1500,
+                new ConfigDescription("Max distance to draw a bot's debug box", new AcceptableValueRange<int>(0, 2000)));
         }
 
         public static void Enable_SettingChanged(object sender, EventArgs e)

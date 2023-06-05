@@ -176,7 +176,8 @@ namespace DrakiaXYZ.BotDebug.Components
                         }
                     }
 
-                    if (bot.Value.GuiContent.text.Length > 0)
+                    int dist = Mathf.RoundToInt((botData.PlayerOwner.Transform.position - localPlayer.Transform.position).magnitude);
+                    if (bot.Value.GuiContent.text.Length > 0 && dist < Settings.MaxDrawDistance.Value)
                     {
                         Vector2 guiSize = guiStyle.CalcSize(bot.Value.GuiContent);
                         bot.Value.GuiRect.x = (screenPos.x * screenScale) - (guiSize.x / 2);
