@@ -29,6 +29,7 @@ namespace DrakiaXYZ.BotDebug.Components
         float lastMemOutUpdate = 0;
         float lastMemOutGui = 0;
         float memTimeframe = 5.0f;
+        float screenScale = 1.0f;
 
         private BotDebugComponent()
         {
@@ -42,6 +43,13 @@ namespace DrakiaXYZ.BotDebug.Components
             localPlayer = gameWorld.MainPlayer;
 
             Logger.LogInfo("BotDebugComponent enabled");
+
+            // If DLSS or FSR are enabled, set a screen scale value
+            if (CameraClass.Instance.SSAA.isActiveAndEnabled)
+            {
+                screenScale = (float)CameraClass.Instance.SSAA.GetOutputWidth() / (float)CameraClass.Instance.SSAA.GetInputWidth();
+                Logger.LogDebug($"DLSS or FSR is enabled, scale screen offsets by {screenScale}");
+            }
         }
         
         public void Dispose()
@@ -152,14 +160,15 @@ namespace DrakiaXYZ.BotDebug.Components
 
                 // Only draw the bot data if it's visible on screen
                 Vector3 aboveBotHeadPos = botData.PlayerOwner.Transform.position + (Vector3.up * 1.5f);
-                if (WorldToScreenPoint(aboveBotHeadPos, Camera.main, out Vector3 screenPos))
+                Vector3 screenPos = Camera.main.WorldToScreenPoint(aboveBotHeadPos);
+                if (screenPos.z > 0)
                 {
                     if (updateGuiPending)
                     {
                         StringBuilder botInfoStringBuilder = BotInfo.GetInfoText(botData, localPlayer, Settings.ActiveMode.Value);
                         if (botInfoStringBuilder != null)
                         {
-                            bot.Value.GuiContent.text = botInfoStringBuilder.ToString();
+                            bot.Value.GuiContent.text = botInfoStringBuilder.ToString().TrimEnd(Environment.NewLine.ToCharArray());
                         }
                         else
                         {
@@ -170,8 +179,8 @@ namespace DrakiaXYZ.BotDebug.Components
                     if (bot.Value.GuiContent.text.Length > 0)
                     {
                         Vector2 guiSize = guiStyle.CalcSize(bot.Value.GuiContent);
-                        bot.Value.GuiRect.x = screenPos.x - (guiSize.x / 2);
-                        bot.Value.GuiRect.y = Screen.height - screenPos.y - guiSize.y;
+                        bot.Value.GuiRect.x = (screenPos.x * screenScale) - (guiSize.x / 2);
+                        bot.Value.GuiRect.y = Screen.height - ((screenPos.y * screenScale) + guiSize.y);
                         bot.Value.GuiRect.size = guiSize;
 
                         GUI.Box(bot.Value.GuiRect, bot.Value.GuiContent, guiStyle);
@@ -196,34 +205,6 @@ namespace DrakiaXYZ.BotDebug.Components
                 lastMemOutGui = Time.time;
             }
 #endif
-        }
-
-        bool WorldToScreenPoint(Vector3 worldPoint, Camera camera, out Vector3 screenPoint)
-        {
-            // calculate view-projection using non-jitter matrices
-            Matrix4x4 viewProjMtx = camera.nonJitteredProjectionMatrix * camera.worldToCameraMatrix;
-
-            // multiply world point by view-projection
-            Vector4 clipPoint = viewProjMtx * new Vector4(worldPoint.x, worldPoint.y, worldPoint.z, 1f);
-
-            if (clipPoint.w == 0f)
-            {
-                // point is undefined on camera focus point
-                screenPoint = Vector3.zero;
-                return false;
-            }
-            else
-            {
-                // check if object is in front of the camera
-                var heading = worldPoint - camera.transform.position;
-                bool inFront = (Vector3.Dot(camera.transform.forward, heading) > 0f);
-
-                // convert x and y from clip space to screen coordinates
-                clipPoint.x = (clipPoint.x / clipPoint.w + 1f) * .5f * camera.pixelWidth;
-                clipPoint.y = (clipPoint.y / clipPoint.w + 1f) * .5f * camera.pixelHeight;
-                screenPoint = new Vector3(clipPoint.x, clipPoint.y, worldPoint.z);
-                return inFront;
-            }
         }
 
         public static void Enable()
