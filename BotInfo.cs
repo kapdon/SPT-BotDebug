@@ -23,18 +23,32 @@ namespace DrakiaXYZ.BotDebug
                 Logger = BepInEx.Logging.Logger.CreateLogSource(sourceName: typeof(BotInfo).Name);
             }
 
+            Color botNameColor = Color.white;
+            if (actorDataStruct.PlayerOwner != null)
+            {
+                botNameColor = Color.green;
+                foreach (GClass475 enemyInfo in actorDataStruct.PlayerOwner.AIData.BotOwner.EnemiesController.EnemyInfos.Values)
+                {
+                    if (enemyInfo.ProfileId == localPlayer.ProfileId)
+                    {
+                        botNameColor = Color.red;
+                        break;
+                    }
+                }
+            }
+
             switch (mode)
             {
                 case EBotInfoMode.Behaviour:
-                    return GetBehaviour(actorDataStruct, localPlayer);
+                    return GetBehaviour(actorDataStruct, botNameColor, localPlayer);
                 case EBotInfoMode.BattleState:
-                    return GetBattleState(actorDataStruct);
+                    return GetBattleState(actorDataStruct, botNameColor);
                 case EBotInfoMode.Health:
-                    return GetHealth(actorDataStruct);
+                    return GetHealth(actorDataStruct, botNameColor);
                 case EBotInfoMode.Specials:
-                    return GetSpecial(actorDataStruct);
+                    return GetSpecial(actorDataStruct, botNameColor);
                 case EBotInfoMode.Custom:
-                    return GetCustom(actorDataStruct);
+                    return GetCustom(actorDataStruct, botNameColor);
                 default:
                     return null;
             }
@@ -50,12 +64,13 @@ namespace DrakiaXYZ.BotDebug
             return val ? "(Broken)" : "";
         }
 
-        private static StringBuilder GetCustom(ActorDataStruct actorDataStruct)
+        private static StringBuilder GetCustom(ActorDataStruct actorDataStruct, Color botNameColor)
         {
             BotDataStruct botData = actorDataStruct.BotData;
             stringBuilder.Clear();
-            stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, Color.white, false);
-            stringBuilder.AppendLabeledValue("Layer", botData.LayerName, greyTextColor, greyTextColor, true);
+            stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
+            stringBuilder.AppendLabeledValue("Layer", botData.LayerName, Color.white, Color.white, true);
+            stringBuilder.AppendLabeledValue("Nickname", actorDataStruct.PlayerOwner?.Profile.Nickname, Color.white, Color.white, true);
             if (string.IsNullOrEmpty(botData.CustomData))
             {
                 stringBuilder.AppendLine("No Custom Data");
@@ -67,11 +82,11 @@ namespace DrakiaXYZ.BotDebug
             return stringBuilder;
         }
 
-        private static StringBuilder GetSpecial(ActorDataStruct actorDataStruct)
+        private static StringBuilder GetSpecial(ActorDataStruct actorDataStruct, Color botNameColor)
         {
             BotDataStruct botData = actorDataStruct.BotData;
             stringBuilder.Clear();
-            stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, Color.white, false);
+            stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
 
             for (int i = 0; i < actorDataStruct.ProfileId.Length; i += 12)
             {
@@ -104,24 +119,10 @@ namespace DrakiaXYZ.BotDebug
             return stringBuilder;
         }
 
-        private static StringBuilder GetBehaviour(ActorDataStruct actorDataStruct, Player localPlayer)
+        private static StringBuilder GetBehaviour(ActorDataStruct actorDataStruct, Color botNameColor, Player localPlayer)
         {
             BotDataStruct botData = actorDataStruct.BotData;
             stringBuilder.Clear();
-
-            Color botNameColor = Color.white;
-            if (actorDataStruct.PlayerOwner != null)
-            {
-                botNameColor = Color.green;
-                foreach (GClass475 enemyInfo in actorDataStruct.PlayerOwner.AIData.BotOwner.EnemiesController.EnemyInfos.Values)
-                {
-                    if (enemyInfo.ProfileId == localPlayer.ProfileId)
-                    {
-                        botNameColor = Color.red;
-                        break;
-                    }
-                }
-            }
 
             stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
             stringBuilder.AppendLabeledValue("Layer", botData.LayerName, Color.yellow, Color.yellow, true);
@@ -142,11 +143,11 @@ namespace DrakiaXYZ.BotDebug
             return stringBuilder;
         }
 
-        private static StringBuilder GetBattleState(ActorDataStruct actorDataStruct)
+        private static StringBuilder GetBattleState(ActorDataStruct actorDataStruct, Color botNameColor)
         {
             BotDataStruct botData = actorDataStruct.BotData;
             stringBuilder.Clear();
-            stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, Color.white, false);
+            stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
             try
             {
                 if (actorDataStruct.PlayerOwner != null)
@@ -173,15 +174,28 @@ namespace DrakiaXYZ.BotDebug
                 Logger.LogError(ex);
             }
 
+            if (actorDataStruct.PlayerOwner != null)
+            {
+                var goalEnemy = actorDataStruct.PlayerOwner.AIData.BotOwner.Memory.GoalEnemy;
+                if (goalEnemy?.Person?.IsAI == true)
+                {
+                    stringBuilder.AppendLabeledValue("GoalEnemy", $"{goalEnemy?.Person?.AIData?.BotOwner?.name}", Color.white, Color.white, true);
+                }
+                else
+                {
+                    stringBuilder.AppendLabeledValue("GoalEnemy", $"{goalEnemy?.Person?.GetPlayer?.Profile?.Nickname}", Color.white, Color.white, true);
+                }
+            }
+
             return stringBuilder;
         }
 
-        private static StringBuilder GetHealth(ActorDataStruct actorDataStruct)
+        private static StringBuilder GetHealth(ActorDataStruct actorDataStruct, Color botNameColor)
         {
             BotDataStruct botData = actorDataStruct.BotData;
             HealthDataStruct healthData = actorDataStruct.HeathsData;
             stringBuilder.Clear();
-            stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, Color.white, false);
+            stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
             stringBuilder.AppendLabeledValue("Head", $"{healthData.HealthHead}{GetBlackoutLabel(healthData.HealthHeadBL)}{GetBrokenLabel(healthData.HealthHeadBroken)}", Color.white, Color.white, true);
             stringBuilder.AppendLabeledValue("Chest", $"{healthData.HealthBody}{GetBlackoutLabel(healthData.HealthBodyBL)}{GetBrokenLabel(healthData.HealthHeadBroken)}", Color.white, Color.white, true);
             stringBuilder.AppendLabeledValue("Stomach", $"{healthData.HealthStomach}{GetBlackoutLabel(healthData.HealthStomachBL)}", Color.white, Color.white, true);
