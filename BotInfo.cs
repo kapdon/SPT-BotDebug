@@ -108,7 +108,22 @@ namespace DrakiaXYZ.BotDebug
         {
             BotDataStruct botData = actorDataStruct.BotData;
             stringBuilder.Clear();
-            stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, Color.white, false);
+
+            Color botNameColor = Color.white;
+            if (actorDataStruct.PlayerOwner != null)
+            {
+                botNameColor = Color.green;
+                foreach (GClass475 enemyInfo in actorDataStruct.PlayerOwner.AIData.BotOwner.EnemiesController.EnemyInfos.Values)
+                {
+                    if (enemyInfo.ProfileId == localPlayer.ProfileId)
+                    {
+                        botNameColor = Color.red;
+                        break;
+                    }
+                }
+            }
+
+            stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
             stringBuilder.AppendLabeledValue("Layer", botData.LayerName, Color.yellow, Color.yellow, true);
             stringBuilder.AppendLabeledValue("Node", botData.NodeName, Color.white, Color.white, true);
             stringBuilder.AppendLabeledValue("EnterBy", botData.Reason, greenTextColor, greenTextColor, true);
