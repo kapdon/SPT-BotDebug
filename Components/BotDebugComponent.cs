@@ -17,19 +17,21 @@ namespace DrakiaXYZ.BotDebug.Components
         private Player localPlayer;
 
         private GUIStyle guiStyle;
-        private float lastBotUpdate;
+        private float nextUpdateTime;
         private bool updateGuiPending = false;
 
         private Dictionary<string, BotData> botMap = new Dictionary<string, BotData>();
         private List<string> deadList = new List<string>();
         protected ManualLogSource Logger;
+        float screenScale = 1.0f;
 
+#if DEBUG
         long memAllocUpdate = 0;
         long memAllocGui = 0;
         float lastMemOutUpdate = 0;
         float lastMemOutGui = 0;
         float memTimeframe = 5.0f;
-        float screenScale = 1.0f;
+#endif
 
         private BotDebugComponent()
         {
@@ -79,11 +81,11 @@ namespace DrakiaXYZ.BotDebug.Components
             }
 
             // Only update bot data once every second
-            if (Time.time - lastBotUpdate < 1.0f)
+            if (Time.time < nextUpdateTime)
             {
                 return;
             }
-            lastBotUpdate = Time.time;
+            nextUpdateTime = Time.time + 1.0f;
 
 #if DEBUG
             long startMem = GC.GetTotalMemory(false);
