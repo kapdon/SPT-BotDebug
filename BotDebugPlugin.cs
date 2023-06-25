@@ -11,7 +11,8 @@ using UnityEngine;
 
 namespace DrakiaXYZ.BotDebug
 {
-    [BepInPlugin("xyz.drakia.botdebug", "DrakiaXYZ-BotDebug", "1.0.0")]
+    [BepInPlugin("xyz.drakia.botdebug", "DrakiaXYZ-BotDebug", "1.0.1")]
+    [BepInDependency("com.spt-aki.core", "3.5.8")]
     public class BotDebugPlugin : BaseUnityPlugin
     {
         private void Awake()
