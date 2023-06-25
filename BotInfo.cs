@@ -7,6 +7,8 @@ using ActorDataStruct = GStruct15;
 using BotDataStruct = GStruct14;
 using HealthDataStruct = GStruct13;
 using EnemyInfoClass = GClass475;
+using static DrakiaXYZ.BotDebug.Components.BotDebugComponent;
+using DrakiaXYZ.BigBrain.Brains;
 
 namespace DrakiaXYZ.BotDebug
 {
@@ -17,7 +19,7 @@ namespace DrakiaXYZ.BotDebug
         private static readonly string greenTextColor = new Color(0.25f, 1f, 0.2f).GetRichTextColor();
         private static ManualLogSource Logger;
 
-        public static StringBuilder GetInfoText(ActorDataStruct actorDataStruct, Player localPlayer, EBotInfoMode mode)
+        public static StringBuilder GetInfoText(ActorDataStruct actorDataStruct, Player localPlayer, BotInfoMode mode)
         {
             if (Logger == null)
             {
@@ -40,16 +42,20 @@ namespace DrakiaXYZ.BotDebug
 
             switch (mode)
             {
-                case EBotInfoMode.Behaviour:
+                case BotInfoMode.Behaviour:
                     return GetBehaviour(actorDataStruct, botNameColor, localPlayer);
-                case EBotInfoMode.BattleState:
+                case BotInfoMode.BattleState:
                     return GetBattleState(actorDataStruct, botNameColor);
-                case EBotInfoMode.Health:
+                case BotInfoMode.Health:
                     return GetHealth(actorDataStruct, botNameColor);
-                case EBotInfoMode.Specials:
+                case BotInfoMode.Specials:
                     return GetSpecial(actorDataStruct, botNameColor);
-                case EBotInfoMode.Custom:
+                case BotInfoMode.Custom:
                     return GetCustom(actorDataStruct, botNameColor);
+                case BotInfoMode.BigBrainLayer:
+                    return GetBigBrainLayer(actorDataStruct, botNameColor);
+                case BotInfoMode.BigBrainLogic:
+                    return GetBigBrainLogic(actorDataStruct, botNameColor);
                 default:
                     return null;
             }
@@ -203,6 +209,74 @@ namespace DrakiaXYZ.BotDebug
             stringBuilder.AppendLabeledValue("Arms", $"{healthData.HealthLeftArm}{GetBlackoutLabel(healthData.HealthLeftArmBL)}{GetBrokenLabel(healthData.HealthLeftArmBroken)} {healthData.HealthRightArm}{GetBlackoutLabel(healthData.HealthRightArmBL)}{GetBrokenLabel(healthData.HealthRightArmBroken)}", Color.white, Color.white, true);
             stringBuilder.AppendLabeledValue("Legs", $"{healthData.HealthLeftLeg}{GetBlackoutLabel(healthData.HealthLeftLegBL)}{GetBrokenLabel(healthData.HealthLeftLegBroken)} {healthData.HealthRightLeg}{GetBlackoutLabel(healthData.HealthRightLegBL)}{GetBrokenLabel(healthData.HealthRightLegBroken)}", Color.white, Color.white, true);
             return stringBuilder;
+        }
+
+        private static StringBuilder GetBigBrainLayer(ActorDataStruct actorDataStruct, Color botNameColor)
+        {
+            BotDataStruct botData = actorDataStruct.BotData;
+
+            stringBuilder.Clear();
+            stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
+
+            object activeLayer = BrainManager.GetActiveLayer(actorDataStruct.PlayerOwner.AIData.BotOwner);
+            if (activeLayer != null)
+            {
+                stringBuilder.AppendLabeledValue("Class", $"{activeLayer.GetType().Name}", Color.white, Color.white, true);
+                AddActiveLayer(stringBuilder, activeLayer);
+                (activeLayer as CustomLayer)?.BuildDebugText(stringBuilder);
+            }
+
+            return stringBuilder;
+        }
+
+        private static StringBuilder GetBigBrainLogic(ActorDataStruct actorDataStruct, Color botNameColor)
+        {
+            BotDataStruct botData = actorDataStruct.BotData;
+
+            stringBuilder.Clear();
+            stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
+
+            object activeLayer = BrainManager.GetActiveLayer(actorDataStruct.PlayerOwner.AIData.BotOwner);
+            AddActiveLayer(stringBuilder, activeLayer);
+
+            object activeLogic = BrainManager.GetActiveLogic(actorDataStruct.PlayerOwner.AIData.BotOwner);
+            if (activeLogic != null)
+            {
+                stringBuilder.AppendLabeledValue("Logic", $"{activeLogic.GetType().Name}", Color.white, Color.white, true);
+                if (activeLogic is CustomLogic customLogic)
+                {
+                    customLogic?.BuildDebugText(stringBuilder);
+                }
+            }
+
+            return stringBuilder;
+        }
+
+        private static void AddActiveLayer(StringBuilder stringBuilder, object activeLayer)
+        {
+            if (activeLayer != null)
+            {
+                if (activeLayer is CustomLayer customLayer)
+                {
+                    stringBuilder.AppendLabeledValue("Layer", $"{customLayer.GetName()}", Color.white, Color.white, true);
+                }
+                else if (activeLayer is BaseLogicLayerClass logicLayer)
+                {
+                    stringBuilder.AppendLabeledValue("Layer", $"{logicLayer.Name()}", Color.grey, Color.grey, true);
+                }
+            }
+        }
+
+        public enum BotInfoMode
+        {
+            Minimized = 0,
+            Behaviour,
+            BattleState,
+            Health,
+            Specials,
+            Custom,
+            BigBrainLayer,
+            BigBrainLogic
         }
     }
 }

@@ -3,13 +3,14 @@ using Comfort.Common;
 using DrakiaXYZ.BotDebug.Components;
 using System;
 using UnityEngine;
+using static DrakiaXYZ.BotDebug.BotInfo;
 
 namespace DrakiaXYZ.BotDebug.Helpers
 {
     internal class Settings
     {
         public static ConfigEntry<bool> Enable;
-        public static ConfigEntry<EBotInfoMode> ActiveMode;
+        public static ConfigEntry<BotInfoMode> ActiveMode;
         public static ConfigEntry<KeyboardShortcut> NextModeKey;
         public static ConfigEntry<KeyboardShortcut> PrevModeKey;
         public static ConfigEntry<int> MaxDrawDistance;
@@ -26,7 +27,7 @@ namespace DrakiaXYZ.BotDebug.Helpers
             ActiveMode = Config.Bind(
                 "Main Settings",
                 "ActiveMode",
-                EBotInfoMode.Behaviour,
+                BotInfoMode.Behaviour,
                 "Set the bot monitor mode");
 
             NextModeKey = Config.Bind(
