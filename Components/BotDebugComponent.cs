@@ -92,7 +92,7 @@ namespace DrakiaXYZ.BotDebug.Components
 #endif
 
             // Add any missing bots to the dictionary, pulling the debug data from BSG classes
-            foreach (Player player in gameWorld.RegisteredPlayers)
+            foreach (Player player in gameWorld.AllAlivePlayersList)
             {
                 var data = botSpawner.BotDebugData(localPlayer, player.ProfileId);
                 if (!botMap.TryGetValue(player.ProfileId, out var botData))
