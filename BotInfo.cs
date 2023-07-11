@@ -51,10 +51,12 @@ namespace DrakiaXYZ.BotDebug
                     return GetSpecial(actorDataStruct, botNameColor);
                 case BotInfoMode.Custom:
                     return GetCustom(actorDataStruct, botNameColor);
+#if !STANDALONE
                 case BotInfoMode.BigBrainLayer:
                     return GetBigBrainLayer(actorDataStruct, botNameColor);
                 case BotInfoMode.BigBrainLogic:
                     return GetBigBrainLogic(actorDataStruct, botNameColor);
+#endif
                 default:
                     return null;
             }
@@ -210,6 +212,7 @@ namespace DrakiaXYZ.BotDebug
             return stringBuilder;
         }
 
+#if !STANDALONE
         private static StringBuilder GetBigBrainLayer(ActorDataStruct actorDataStruct, Color botNameColor)
         {
             BotDataStruct botData = actorDataStruct.BotData;
@@ -265,6 +268,7 @@ namespace DrakiaXYZ.BotDebug
                 }
             }
         }
+#endif
 
         public enum BotInfoMode
         {
@@ -274,8 +278,10 @@ namespace DrakiaXYZ.BotDebug
             Health,
             Specials,
             Custom,
+#if !STANDALONE
             BigBrainLayer,
             BigBrainLogic
+#endif
         }
     }
 }
