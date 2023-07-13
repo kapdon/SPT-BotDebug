@@ -186,7 +186,10 @@ namespace DrakiaXYZ.BotDebug
                 var goalEnemy = actorDataStruct.PlayerOwner.AIData.BotOwner.Memory.GoalEnemy;
                 if (goalEnemy?.Person?.IsAI == true)
                 {
-                    stringBuilder.AppendLabeledValue("GoalEnemy", $"{goalEnemy?.Person?.AIData?.BotOwner?.name}", Color.white, Color.white, true);
+                    if (goalEnemy?.Person?.AIData?.BotOwner != null)
+                    {
+                        stringBuilder.AppendLabeledValue("GoalEnemy", $"{goalEnemy?.Person?.AIData?.BotOwner?.name}", Color.white, Color.white, true);
+                    }
                 }
                 else
                 {

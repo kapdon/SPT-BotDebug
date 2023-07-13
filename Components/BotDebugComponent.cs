@@ -142,6 +142,11 @@ namespace DrakiaXYZ.BotDebug.Components
             {
                 var botData = bot.Value.Data;
                 if (!botData.InitedBotData) continue;
+                if (botData.PlayerOwner?.AIData?.BotOwner == null)
+                {
+                    deadList.Add(bot.Key);
+                    continue;
+                }
 
                 // If the bot hasn't been updated in over 3 seconds, it's dead Jim, remove it
                 if (Time.time - bot.Value.LastUpdate >= 3f)
