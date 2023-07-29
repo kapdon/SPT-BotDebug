@@ -6,7 +6,6 @@ using UnityEngine;
 using ActorDataStruct = GStruct15;
 using BotDataStruct = GStruct14;
 using HealthDataStruct = GStruct13;
-using EnemyInfoClass = GClass476;
 using DrakiaXYZ.BigBrain.Brains;
 
 namespace DrakiaXYZ.BotDebug
@@ -29,7 +28,7 @@ namespace DrakiaXYZ.BotDebug
             if (actorDataStruct.PlayerOwner != null)
             {
                 botNameColor = Color.green;
-                foreach (EnemyInfoClass enemyInfo in actorDataStruct.PlayerOwner.AIData.BotOwner.EnemiesController.EnemyInfos.Values)
+                foreach (var enemyInfo in actorDataStruct.PlayerOwner.AIData.BotOwner.EnemiesController.EnemyInfos.Values)
                 {
                     if (enemyInfo.ProfileId == localPlayer.ProfileId)
                     {
