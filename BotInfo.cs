@@ -159,7 +159,8 @@ namespace DrakiaXYZ.BotDebug
             {
                 if (actorDataStruct.PlayerOwner != null)
                 {
-                    Player.FirearmController firearmController = actorDataStruct.PlayerOwner.AIData.BotOwner.GetPlayer.HandsController as Player.FirearmController;
+                    BotOwner botOwner = actorDataStruct.PlayerOwner.AIData.BotOwner;
+                    Player.FirearmController firearmController = botOwner.GetPlayer.HandsController as Player.FirearmController;
                     if (firearmController != null)
                     {
                         int chamberAmmoCount = firearmController.Item.ChamberAmmoCount;
@@ -169,6 +170,12 @@ namespace DrakiaXYZ.BotDebug
                     stringBuilder.AppendLabeledValue("Hits", $"{botData.HitsOnMe} / {botData.ShootsOnMe}", Color.white, Color.white, true);
                     stringBuilder.AppendLabeledValue("Reloading", $"{botData.Reloading}", Color.white, Color.white, true);
                     stringBuilder.AppendLabeledValue("CoverId", $"{botData.CoverIndex}", Color.white, Color.white, true);
+
+                    bool weaponReady = botOwner.WeaponManager?.Selector?.IsWeaponReady == true;
+                    bool hasMalfunction = botOwner.WeaponManager?.Malfunctions?.HaveMalfunction() == true;
+                    stringBuilder.AppendLabeledValue("WeaponReady", $"{weaponReady}", Color.white, weaponReady ? Color.white : Color.red, true);
+                    stringBuilder.AppendLabeledValue("Malfunction", $"{hasMalfunction}", Color.white, !hasMalfunction ? Color.white : Color.red, true);
+
                 }
                 else
                 {
