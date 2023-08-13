@@ -6,14 +6,13 @@ using Comfort.Common;
 using DrakiaXYZ.BotDebug.Helpers;
 using EFT;
 using UnityEngine;
-using BotDebugStruct = GStruct15;
 
 namespace DrakiaXYZ.BotDebug.Components
 {
     internal class BotDebugComponent : MonoBehaviour, IDisposable
     {
         private GameWorld gameWorld;
-        private BotSpawnerClass botSpawner;
+        private BotSpawner botSpawner;
         private Player localPlayer;
 
         private GUIStyle guiStyle;
@@ -235,14 +234,14 @@ namespace DrakiaXYZ.BotDebug.Components
 
         internal class BotData
         {
-            public void SetData(BotDebugStruct botData)
+            public void SetData(ActorDataStruct botData)
             {
                 LastUpdate = Time.time;
                 Data = botData;
             }
 
             public float LastUpdate;
-            public BotDebugStruct Data;
+            public ActorDataStruct Data;
             public GUIContent GuiContent;
             public Rect GuiRect;
         }

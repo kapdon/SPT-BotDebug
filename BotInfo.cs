@@ -3,9 +3,6 @@ using EFT;
 using System;
 using System.Text;
 using UnityEngine;
-using ActorDataStruct = GStruct15;
-using BotDataStruct = GStruct14;
-using HealthDataStruct = GStruct13;
 using DrakiaXYZ.BigBrain.Brains;
 
 namespace DrakiaXYZ.BotDebug
@@ -73,7 +70,7 @@ namespace DrakiaXYZ.BotDebug
 
         private static StringBuilder GetCustom(ActorDataStruct actorDataStruct, Color botNameColor)
         {
-            BotDataStruct botData = actorDataStruct.BotData;
+            var botData = actorDataStruct.BotData;
             stringBuilder.Clear();
             stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
             stringBuilder.AppendLabeledValue("Layer", botData.LayerName, Color.white, Color.white, true);
@@ -91,7 +88,7 @@ namespace DrakiaXYZ.BotDebug
 
         private static StringBuilder GetSpecial(ActorDataStruct actorDataStruct, Color botNameColor)
         {
-            BotDataStruct botData = actorDataStruct.BotData;
+            var botData = actorDataStruct.BotData;
             stringBuilder.Clear();
             stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
 
@@ -128,7 +125,7 @@ namespace DrakiaXYZ.BotDebug
 
         private static StringBuilder GetBehaviour(ActorDataStruct actorDataStruct, Color botNameColor, Player localPlayer)
         {
-            BotDataStruct botData = actorDataStruct.BotData;
+            var botData = actorDataStruct.BotData;
             stringBuilder.Clear();
 
             stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
@@ -152,7 +149,7 @@ namespace DrakiaXYZ.BotDebug
 
         private static StringBuilder GetBattleState(ActorDataStruct actorDataStruct, Color botNameColor)
         {
-            BotDataStruct botData = actorDataStruct.BotData;
+            var botData = actorDataStruct.BotData;
             stringBuilder.Clear();
             stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
             try
@@ -209,8 +206,8 @@ namespace DrakiaXYZ.BotDebug
 
         private static StringBuilder GetHealth(ActorDataStruct actorDataStruct, Color botNameColor)
         {
-            BotDataStruct botData = actorDataStruct.BotData;
-            HealthDataStruct healthData = actorDataStruct.HeathsData;
+            var botData = actorDataStruct.BotData;
+            var healthData = actorDataStruct.HeathsData;
             stringBuilder.Clear();
             stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
             stringBuilder.AppendLabeledValue("Head", $"{healthData.HealthHead}{GetBlackoutLabel(healthData.HealthHeadBL)}{GetBrokenLabel(healthData.HealthHeadBroken)}", Color.white, Color.white, true);
@@ -224,7 +221,7 @@ namespace DrakiaXYZ.BotDebug
 #if !STANDALONE
         private static StringBuilder GetBigBrainLayer(ActorDataStruct actorDataStruct, Color botNameColor)
         {
-            BotDataStruct botData = actorDataStruct.BotData;
+            var botData = actorDataStruct.BotData;
 
             stringBuilder.Clear();
             stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
@@ -242,7 +239,7 @@ namespace DrakiaXYZ.BotDebug
 
         private static StringBuilder GetBigBrainLogic(ActorDataStruct actorDataStruct, Color botNameColor)
         {
-            BotDataStruct botData = actorDataStruct.BotData;
+            var botData = actorDataStruct.BotData;
 
             stringBuilder.Clear();
             stringBuilder.AppendLabeledValue("Bot (Brain)", $"{botData.Name} ({botData.StrategyName})", Color.white, botNameColor, false);
