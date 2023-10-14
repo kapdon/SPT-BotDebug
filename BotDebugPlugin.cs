@@ -11,10 +11,10 @@ using UnityEngine;
 
 namespace DrakiaXYZ.BotDebug
 {
-    [BepInPlugin("xyz.drakia.botdebug", "DrakiaXYZ-BotDebug", "1.2.0")]
+    [BepInPlugin("xyz.drakia.botdebug", "DrakiaXYZ-BotDebug", "1.2.1")]
 #if !STANDALONE
-    [BepInDependency("com.spt-aki.core", "3.7.0")]
-    [BepInDependency("xyz.drakia.bigbrain", "0.3.0")]
+    [BepInDependency("com.spt-aki.core", "3.7.1")]
+    [BepInDependency("xyz.drakia.bigbrain", "0.3.1")]
 #endif
     public class BotDebugPlugin : BaseUnityPlugin
     {
