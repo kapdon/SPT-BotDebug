@@ -51,12 +51,23 @@ namespace DrakiaXYZ.BotDebug.Components
                 screenScale = (float)CameraClass.Instance.SSAA.GetOutputWidth() / (float)CameraClass.Instance.SSAA.GetInputWidth();
                 Logger.LogDebug($"DLSS or FSR is enabled, scale screen offsets by {screenScale}");
             }
+
+            Settings.FontSize.SettingChanged += (object sender, EventArgs e) => { CreateGuiStyle(); };
         }
         
         public void Dispose()
         {
             Logger.LogInfo("BotDebugComponent disabled");
             Destroy(this);
+        }
+
+        private void CreateGuiStyle()
+        {
+            guiStyle = new GUIStyle(GUI.skin.box);
+            guiStyle.alignment = TextAnchor.MiddleLeft;
+            guiStyle.fontSize = Settings.FontSize.Value;
+            guiStyle.margin = new RectOffset(3, 3, 3, 3);
+            guiStyle.richText = true;
         }
 
         public void Update()
@@ -130,11 +141,7 @@ namespace DrakiaXYZ.BotDebug.Components
 
             if (guiStyle == null)
             {
-                guiStyle = new GUIStyle(GUI.skin.box);
-                guiStyle.alignment = TextAnchor.MiddleLeft;
-                guiStyle.fontSize = 24;
-                guiStyle.margin = new RectOffset(3, 3, 3, 3);
-                guiStyle.richText = true;
+                CreateGuiStyle();
             }
 
             foreach (var bot in botMap)

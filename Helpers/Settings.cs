@@ -14,39 +14,48 @@ namespace DrakiaXYZ.BotDebug.Helpers
         public static ConfigEntry<KeyboardShortcut> NextModeKey;
         public static ConfigEntry<KeyboardShortcut> PrevModeKey;
         public static ConfigEntry<int> MaxDrawDistance;
+        public static ConfigEntry<int> FontSize;
+
+        private static string _mainSettingsLabel = "Main Settings";
 
         public static void Init(ConfigFile Config)
         {
             Enable = Config.Bind(
-                "Main Settings",
+                _mainSettingsLabel,
                 "Enable",
                 false,
                 "Turn Off/On");
             Enable.SettingChanged += Enable_SettingChanged;
 
             ActiveMode = Config.Bind(
-                "Main Settings",
+                _mainSettingsLabel,
                 "ActiveMode",
                 BotInfoMode.Behaviour,
                 "Set the bot monitor mode");
 
             NextModeKey = Config.Bind(
-                "Main Settings",
+                _mainSettingsLabel,
                 "NextModeKey",
                 new KeyboardShortcut(KeyCode.F10),
                 "Key to switch to the next Monitor Mode");
 
             PrevModeKey = Config.Bind(
-                "Main Settings",
+                _mainSettingsLabel,
                 "PrevModeKey",
                 new KeyboardShortcut(KeyCode.F9),
                 "Key to switch to the previous Monitor Mode");
 
             MaxDrawDistance = Config.Bind(
-                "Main Settings",
+                _mainSettingsLabel,
                 "MaxDrawDistance",
                 1500,
                 new ConfigDescription("Max distance to draw a bot's debug box", new AcceptableValueRange<int>(0, 2000)));
+
+            FontSize = Config.Bind(
+                _mainSettingsLabel,
+                "FontSize",
+                24,
+                new ConfigDescription("Font Size", new AcceptableValueRange<int>(12, 36)));
         }
 
         public static void Enable_SettingChanged(object sender, EventArgs e)
