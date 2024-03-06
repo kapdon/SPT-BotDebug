@@ -20,10 +20,12 @@ namespace DrakiaXYZ.BotDebug
     {
         private void Awake()
         {
+#if !STANDALONE
             if (!TarkovVersion.CheckEftVersion(Logger, Info, Config))
             {
                 throw new Exception($"Invalid EFT Version");
             }
+#endif
 
             Settings.Init(Config);
 

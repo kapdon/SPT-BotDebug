@@ -148,7 +148,10 @@ namespace DrakiaXYZ.BotDebug.Components
             {
                 var botData = bot.Value.Data;
                 if (!botData.InitedBotData) continue;
-                if (botData.PlayerOwner?.AIData?.BotOwner == null)
+                var playerOwner = FieldHelper.PlayerOwnerField.GetValue(botData);
+                AIData aiData = FieldHelper.Property<AIData>(playerOwner, "AIData");
+
+                if (aiData?.BotOwner == null)
                 {
                     deadList.Add(bot.Key);
                     continue;
@@ -172,7 +175,8 @@ namespace DrakiaXYZ.BotDebug.Components
                 }
 
                 // Only draw the bot data if it's visible on screen
-                Vector3 aboveBotHeadPos = botData.PlayerOwner.iPlayer.Position + (Vector3.up * 1.5f);
+                IPlayer iPlayer = FieldHelper.Property<IPlayer>(playerOwner, "iPlayer");
+                Vector3 aboveBotHeadPos = iPlayer.Position + (Vector3.up * 1.5f);
                 Vector3 screenPos = Camera.main.WorldToScreenPoint(aboveBotHeadPos);
                 if (screenPos.z > 0)
                 {
@@ -189,7 +193,7 @@ namespace DrakiaXYZ.BotDebug.Components
                         }
                     }
 
-                    int dist = Mathf.RoundToInt((botData.PlayerOwner.iPlayer.Position - localPlayer.Transform.position).magnitude);
+                    int dist = Mathf.RoundToInt((iPlayer.Position - localPlayer.Transform.position).magnitude);
                     if (bot.Value.GuiContent.text.Length > 0 && dist < Settings.MaxDrawDistance.Value)
                     {
                         Vector2 guiSize = guiStyle.CalcSize(bot.Value.GuiContent);
@@ -226,7 +230,11 @@ namespace DrakiaXYZ.BotDebug.Components
             if (Singleton<IBotGame>.Instantiated)
             {
                 var gameWorld = Singleton<GameWorld>.Instance;
-                gameWorld.GetOrAddComponent<BotDebugComponent>();
+
+                if (gameWorld.gameObject.GetComponent<BotDebugComponent>() == null)
+                {
+                    gameWorld.gameObject.AddComponent<BotDebugComponent>();
+                }
             }
         }
 
