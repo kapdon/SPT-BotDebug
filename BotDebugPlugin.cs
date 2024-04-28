@@ -13,7 +13,7 @@ namespace DrakiaXYZ.BotDebug
 {
     [BepInPlugin("xyz.drakia.botdebug", "DrakiaXYZ-BotDebug", "1.3.0")]
 #if !STANDALONE
-    [BepInDependency("com.spt-aki.core", "3.8.0")]
+ //   [BepInDependency("com.spt-aki.core", "3.8.0")]
     [BepInDependency("xyz.drakia.bigbrain", "0.4.0")]
 #endif
     public class BotDebugPlugin : BaseUnityPlugin

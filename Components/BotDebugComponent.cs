@@ -7,6 +7,8 @@ using DrakiaXYZ.BotDebug.Helpers;
 using EFT;
 using UnityEngine;
 
+using CameraClass = FPSCamera;
+
 namespace DrakiaXYZ.BotDebug.Components
 {
     internal class BotDebugComponent : MonoBehaviour, IDisposable
